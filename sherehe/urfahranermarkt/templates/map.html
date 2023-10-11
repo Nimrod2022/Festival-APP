@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Map with Django API Data</title>
+    <!-- Leaflet CSS and JavaScript -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- jQuery for easier DOM manipulation -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <!-- Container for the map -->
+    <div id="map" style="height: 500px;"></div>
+
+    <!-- Container for categories -->
+    <div id="categoryList">
+        <button data-category="dustbins">Dustbins</button>
+        <button data-category="food_stalls">Food Stalls</button>
+        <button data-category="info_points">Info Points</button>
+        <button data-category="kids_arena">Kids Arena</button>
+        <button data-category="shops">Shops</button>
+        <button data-category="washrooms">Washrooms</button>
+
+        <!-- Add buttons for other categories -->
+    </div>
+
+    <!-- Input field for search -->
+    <input type="text" id="searchInput" placeholder="Search for locations">
+
+    <!-- Result container for search results -->
+    <div id="searchResults"></div>
+
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([48.31347227966248, 14.2885327222578], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Function to fetch and display category data on the map
+        function fetchAndDisplayCategoryData(category) {
+            $.ajax({
+                url: '/urfahranermarkt/api/' + category + '/',
+                type: 'GET',
+                success: function (data) {
+                    // Clear existing markers on the map
+                    map.eachLayer(function (layer) {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    // Iterate through the data and add markers to the map
+                    data.forEach(function (item) {
+                        var geom = item.geom; // Get the WKT format geometry
+                        var coordinates = parseCoordinatesFromWKT(geom);
+                        var marker = L.marker([coordinates.latitude, coordinates.longitude]).addTo(map);
+                        marker.bindPopup(item.name); // Display the item name as a popup
+                    });
+                }
+            });
+        }
+
+        // Function to parse coordinates from WKT format
+        function parseCoordinatesFromWKT(wkt) {
+            // Example WKT format: "SRID=4326;POINT (14.287900180753136 48.3120218898261)"
+            var coordinates = wkt.match(/\(([^)]+)\)/)[1].split(' ');
+            return {
+                longitude: parseFloat(coordinates[0]),
+                latitude: parseFloat(coordinates[1])
+            };
+        }
+
+        // Event listener for category buttons
+        $('#categoryList button').on('click', function () {
+            var category = $(this).data('category');
+            fetchAndDisplayCategoryData(category);
+        });
+
+        // Event listener for the search input field
+        $('#searchInput').on('input', function () {
+            var query = $(this).val();
+            performSearch(query);
+        });
+    </script>
+</body>
+</html>
