@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaflet Map with Django API Data</title>
+    
     <!-- Leaflet CSS and JavaScript -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -56,7 +57,16 @@
                         var geom = item.geom; // Get the WKT format geometry
                         var coordinates = parseCoordinatesFromWKT(geom);
                         var marker = L.marker([coordinates.latitude, coordinates.longitude]).addTo(map);
-                        marker.bindPopup(item.name); // Display the item name as a popup
+
+                        // dynamic pop-up content
+                        var popupContent = '<b>Name:</b> ' + item.name;
+                        if (item.cuisine){
+                            popupContent += '<br><b>Cuisine:</b> ' + item.cuisine;
+                        }
+                        
+                        marker.bindPopup(popupContent);
+                            
+                        
                     });
                 }
             });
